@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-rework-auth-user
+      author: owoke
+
+      changes:
+        - dropColumn:
+            tableName: auth_user
+            columnName: enabled
+
+        - dropNotNullConstraint:
+            tableName: auth_user
+            columnName: email_verified
+            columnDataType: boolean

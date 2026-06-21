@@ -11,12 +11,10 @@ import career.flow.owoke.user.entity.User;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    @Mapping(target = "auth_id", source = "authId")
+    @Mapping(source = "authenticationId", target = "authId")
     User toEntity(UserCreateRequest request);
 
-    @Mapping(target = "authId", source = "auth_id")
     UserCreateResponse toCreateResponse(User user);
 
-    @Mapping(target = "authId", source = "auth_id")
     UserResponse toResponse(User user);
 }

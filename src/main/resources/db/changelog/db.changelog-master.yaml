@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-create-auth-user.yaml
+
+  - include:
+      file: db/changelog/002-create-app-user.yaml
+
+  - include:
+      file: db/changelog/003-drop-auth-fk.yml
+
+  - include:
+      file: db/changelog/004-rework-auth-user.yaml

@@ -1,5 +1,6 @@
 package career.flow.owoke.user.service;
 
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,11 +26,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
+    @KafkaListener(topics = "auth", groupId = "user-service")
     @Transactional
     public UserCreateResponse createUser(UserCreateRequest request) {
+        log.info("КАФКА СЛЫШНОООО");
         log.info("Creating new user");
 
-        if (userRepository.existsByAuthId(request.authId())) {
+        if (userRepository.existsByAuthId(request.authenticationId())) {
             log.warn("User already exists");
             throw new UserAlreadyExistsException(request.email());
         }

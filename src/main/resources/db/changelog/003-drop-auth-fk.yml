@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-drop-auth-fk
+      author: owoke
+
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: app_user
+            constraintName: fk_app_user_auth_user
