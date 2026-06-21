@@ -2,6 +2,19 @@ server:
   port: 8088
 
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: xaeshkayt@gmail.com
+    password: ltsc dilo hcat vlvu
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   datasource:
     url: jdbc:postgresql://localhost:5433/owoke_db
     username: owoke
@@ -52,7 +65,7 @@ springdoc:
     path: /api-docs
 
 jwt:
-  secretAccess: "jhkfs12312kbjglj7823124gjhws7878dtSSJLHFSDYUFSDALJHWERNLBASDFG"
-  secretRefresh: "jhkkjhxdfgksjdhffs12312kbjglj7823124gjhws7878dtSSJLHFSDYUFSDALJHWERNLBASDFG"
+  secretAccess: "jhkfs12312kbjgljakljsdfsdkjfsdfhalskdjfhlsdkfhalsd7823124gjhws7878d12344tSSJLHFSDYUFSDALJ123424321adfaHWERNLBASDFG"
+  secretRefresh: "jhkfs12312kbjgljakljsdfsdkjfsdfhalskdjfhlsdkfhalsd7823124gjhws7878d12344tSSJLHFSDYUFSDALJ123424321adfaHWERNLBASDFG"
   expirationAccess: 360000 # 1 час
   expirationRefresh: 259200000 # 1 месяц

@@ -15,7 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import career.flow.owoke.auth.service.AuthService;
+import career.flow.owoke.auth.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
         private final PasswordHash passwordHash;
-        private final AuthService userService;
+        private final CustomUserDetailsService userService;
         private final JwtAuthFilter jwtAuthFilter;
 
         @Bean

@@ -4,11 +4,10 @@ import java.time.Duration;
 import java.util.List;
 
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,28 +19,23 @@ import career.flow.owoke.auth.entity.AuthUser;
 import career.flow.owoke.auth.enums.AuthRole;
 import career.flow.owoke.auth.repository.AuthRepository;
 import career.flow.owoke.common.exception.userExceptions.UserAlreadyExistsException;
+import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
 import career.flow.owoke.config.security.PasswordHash;
+import career.flow.owoke.messaging.EmailService;
 import career.flow.owoke.user.dto.request.UserCreateRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService implements UserDetailsService {
+public class AuthService {
 
     private final AuthRepository authRepository;
+    private final AuthenticationManager authenticationManager;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final PasswordHash passwordHash;
     private final JwtService jwtService;
     private final RedisService redisService;
-
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-
-        AuthUser user = authRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
-
-        return new User(user.getEmail(), user.getPassword(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
-    }
+    private final EmailService emailService;
 
     @Transactional
     public AuthUserResponse createUser(AuthUserCreateRequest request) {
@@ -72,6 +66,8 @@ public class AuthService implements UserDetailsService {
 
         redisService.save("refresh:" + user.getId(), refreshToken, Duration.ofDays(30));
 
+        emailService.sendVerificationEmail(user.getEmail(), refreshToken);
+
         return new AuthUserResponse(
                 accessToken,
                 refreshToken);
@@ -79,8 +75,15 @@ public class AuthService implements UserDetailsService {
 
     @Transactional
     public AuthUserResponse loginUser(AuthUserLoginRequest dto) {
-        AuthUser user = authRepository.findByEmail(dto.email())
-                .orElseThrow(() -> new UsernameNotFoundException(dto.email()));
+        Authentication auth = null;
+        try {
+            auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(dto.email(), dto.password()));
+        } catch (BadCredentialsException e) {
+            throw new BadCredentialsException("Invalid credentials");
+        }
+
+        AuthUser user = (AuthUser) auth.getPrincipal();
 
         JwtClaims claims = new JwtClaims(
                 user.getId(),
@@ -107,5 +110,13 @@ public class AuthService implements UserDetailsService {
             throw new RuntimeException("User not found");
         }
 
+    }
+
+    public String verifyUser(String token) {
+        String email = jwtService.getAllClaims(token).get("email", String.class);
+        AuthUser user = authRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
+        user.setEmailVerified(true);
+        authRepository.save(user);
+        return "User verified successfully";
     }
 }
