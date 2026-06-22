@@ -65,7 +65,7 @@ springdoc:
     path: /api-docs
 
 jwt:
-  secretAccess: "jhkfs12312kbjgljakljsdfsdkjfsdfhalskdjfhlsdkfhalsd7823124gjhws7878d12344tSSJLHFSDYUFSDALJ123424321adfaHWERNLBASDFG"
-  secretRefresh: "jhkfs12312kbjgljakljsdfsdkjfsdfhalskdjfhlsdkfhalsd7823124gjhws7878d12344tSSJLHFSDYUFSDALJ123424321adfaHWERNLBASDFG"
+  secretAccess: "access-jhkfs12312kbjgljakljsdfsdkjfsdfhalskdjfhlsdkfhalsd7823124gjhws7878d12344tSSJLHFSDYUFSDALJ123424321adfaHWERNLBASDFG"
+  secretRefresh: "refresh-jhkfs12312kbjgljakljsdfsdkjfsdfhalskdjfhlsdkfhalsd7823124gjhws7878d12344tSSJLHFSDYUFSDALJ123424321adfaHWERNLBASDFG"
   expirationAccess: 360000 # 1 час
   expirationRefresh: 259200000 # 1 месяц

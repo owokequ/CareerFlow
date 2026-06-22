@@ -23,6 +23,7 @@ import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
 import career.flow.owoke.config.security.PasswordHash;
 import career.flow.owoke.messaging.EmailService;
 import career.flow.owoke.user.dto.request.UserCreateRequest;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -59,6 +60,7 @@ public class AuthService {
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
+                user.getEmailVerified(),
                 List.of("ROLE_" + user.getRole().name()));
 
         String accessToken = jwtService.generateAccessToken(claims);
@@ -89,6 +91,7 @@ public class AuthService {
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
+                user.getEmailVerified(),
                 List.of("ROLE_" + user.getRole().name()));
 
         String accessToken = jwtService.generateAccessToken(claims);
@@ -112,8 +115,33 @@ public class AuthService {
 
     }
 
+    public AuthUserResponse refreshToken(String userId) {
+        String refreshVerify = redisService.get("refresh:" + userId);
+        if (refreshVerify == null) {
+            throw new RuntimeException("Refresh not found with userId: " + userId);
+        }
+
+        Claims claims = jwtService.getAllClaims(refreshVerify, "refresh");
+        JwtClaims jwtClaims = new JwtClaims(
+                claims.getSubject(),
+                claims.get("name", String.class),
+                claims.get("email", String.class),
+                claims.get("emailVerified", Boolean.class),
+                claims.get("roles", List.class));
+
+        String access = jwtService.generateAccessToken(jwtClaims);
+        String refresh = jwtService.generateRefreshToken(jwtClaims);
+
+        redisService.save("refresh:" + userId, refresh, Duration.ofDays(30));
+
+        return new AuthUserResponse(
+                access,
+                refresh);
+
+    }
+
     public String verifyUser(String token) {
-        String email = jwtService.getAllClaims(token).get("email", String.class);
+        String email = jwtService.getAllClaims(token, "refresh").get("email", String.class);
         AuthUser user = authRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
         user.setEmailVerified(true);
         authRepository.save(user);

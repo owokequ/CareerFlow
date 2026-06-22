@@ -72,25 +72,33 @@ public class JwtService {
                 .getBody();
     }
 
-    public String getUsername(String token) {
-        return getAllClaims(token).getSubject();
+    public String getUsername(String token, String type) {
+        return getAllClaims(token, type).getSubject();
     }
 
     @SuppressWarnings("unchecked")
-    public List<String> getRoles(String token) {
-        return getAllClaims(token).get("roles", List.class);
+    public List<String> getRoles(String token, String type) {
+        return getAllClaims(token, type).get("roles", List.class);
     }
 
-    public String getUserId(String token) {
-        return getAllClaims(token).getSubject();
+    public String getUserId(String token, String type) {
+        return getAllClaims(token, type).getSubject();
     }
 
-    public Claims getAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignInKeyAccess())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    public Claims getAllClaims(String token, String type) {
+        if (type.equals("access")) {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignInKeyAccess())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } else {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignInKeyRefresh())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        }
     }
 
     private Key getSignInKeyAccess() {

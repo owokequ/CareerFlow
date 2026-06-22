@@ -36,7 +36,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
             try {
-                username = jwtService.getUsername(jwt);
+                username = jwtService.getUsername(jwt, "access");
             } catch (ExpiredJwtException e) {
                 log.debug("Token expired");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -52,13 +52,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     username,
                     null,
-                    jwtService.getRoles(jwt).stream().map(SimpleGrantedAuthority::new).toList());
+                    jwtService.getRoles(jwt, "access").stream().map(SimpleGrantedAuthority::new).toList());
             SecurityContextHolder.getContext().setAuthentication(authToken);
 
         }
 
         if (jwt != null) {
-            if (redisService.exists("ban:userId:" + jwtService.getUserId(jwt))) {
+            if (redisService.exists("ban:userId:" + jwtService.getUserId(jwt, "access"))) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }

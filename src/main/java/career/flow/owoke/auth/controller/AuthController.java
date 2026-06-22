@@ -24,10 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 
     private final AuthService authService;
+    private final CookieFactory cookieFactory;
 
     @PostMapping("register")
     public ResponseEntity<AuthUserResponse> createUser(@RequestBody AuthUserCreateRequest dto) {
-        return ResponseEntity.ok(authService.createUser(dto));
+        AuthUserResponse result = authService.createUser(dto);
+        cookieFactory.setCookie(result.refreshToken());
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("login")
