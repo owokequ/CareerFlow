@@ -115,13 +115,8 @@ public class AuthService {
 
     }
 
-    public AuthUserResponse refreshToken(String userId) {
-        String refreshVerify = redisService.get("refresh:" + userId);
-        if (refreshVerify == null) {
-            throw new RuntimeException("Refresh not found with userId: " + userId);
-        }
-
-        Claims claims = jwtService.getAllClaims(refreshVerify, "refresh");
+    public AuthUserResponse refreshToken(String token) {
+        Claims claims = jwtService.getAllClaims(token, "refresh");
         JwtClaims jwtClaims = new JwtClaims(
                 claims.getSubject(),
                 claims.get("name", String.class),
@@ -129,15 +124,20 @@ public class AuthService {
                 claims.get("emailVerified", Boolean.class),
                 claims.get("roles", List.class));
 
+        String refreshVerify = redisService.get("refresh:" + jwtClaims.id());
+
+        if (!refreshVerify.equals(token)) {
+            throw new RuntimeException("Refresh not found with userId: " + jwtClaims.id());
+        }
+
         String access = jwtService.generateAccessToken(jwtClaims);
         String refresh = jwtService.generateRefreshToken(jwtClaims);
 
-        redisService.save("refresh:" + userId, refresh, Duration.ofDays(30));
+        redisService.save("refresh:" + jwtClaims.id(), refresh, Duration.ofDays(30));
 
         return new AuthUserResponse(
                 access,
                 refresh);
-
     }
 
     public String verifyUser(String token) {

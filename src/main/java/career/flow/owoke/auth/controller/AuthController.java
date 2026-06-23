@@ -1,6 +1,7 @@
 package career.flow.owoke.auth.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,17 +36,27 @@ public class AuthController {
 
     @PostMapping("login")
     public ResponseEntity<AuthUserResponse> loginUser(@RequestBody AuthUserLoginRequest dto) {
-        return ResponseEntity.ok(authService.loginUser(dto));
+        AuthUserResponse result = authService.loginUser(dto);
+        cookieFactory.setCookie(result.refreshToken());
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("logout/{id}")
     public ResponseEntity<String> logoutUser(@PathVariable String id) {
+        cookieFactory.clearCookie();
         return ResponseEntity.status(204).body(authService.logoutUser(id));
     }
 
     @GetMapping("register/verify")
     public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
         return ResponseEntity.ok(authService.verifyUser(token));
+    }
+
+    @PostMapping("refresh")
+    public ResponseEntity<AuthUserResponse> refreshToken(@CookieValue("refresh_token") String token) {
+        AuthUserResponse result = authService.refreshToken(token);
+        cookieFactory.setCookie(result.refreshToken());
+        return ResponseEntity.ok(result);
     }
 
 }
