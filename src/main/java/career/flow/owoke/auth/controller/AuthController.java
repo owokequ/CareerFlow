@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import career.flow.owoke.auth.dto.request.AuthUserCreateRequest;
 import career.flow.owoke.auth.dto.request.AuthUserLoginRequest;
+import career.flow.owoke.auth.dto.request.ForgotPasswordRequest;
+import career.flow.owoke.auth.dto.request.ResetPasswordRequest;
 import career.flow.owoke.auth.dto.response.AuthUserResponse;
 import career.flow.owoke.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -30,20 +32,20 @@ public class AuthController {
     @PostMapping("register")
     public ResponseEntity<AuthUserResponse> createUser(@RequestBody AuthUserCreateRequest dto) {
         AuthUserResponse result = authService.createUser(dto);
-        cookieFactory.setCookie(result.refreshToken());
+        cookieFactory.createRefreshCookie(result.refreshToken());
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("login")
     public ResponseEntity<AuthUserResponse> loginUser(@RequestBody AuthUserLoginRequest dto) {
         AuthUserResponse result = authService.loginUser(dto);
-        cookieFactory.setCookie(result.refreshToken());
+        cookieFactory.createRefreshCookie(result.refreshToken());
         return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("logout/{id}")
     public ResponseEntity<String> logoutUser(@PathVariable String id) {
-        cookieFactory.clearCookie();
+        cookieFactory.clearRefreshCookie();
         return ResponseEntity.status(204).body(authService.logoutUser(id));
     }
 
@@ -52,10 +54,22 @@ public class AuthController {
         return ResponseEntity.ok(authService.verifyUser(token));
     }
 
+    @PostMapping("password/reset")
+    public ResponseEntity<String> resetPassword(@RequestParam("token") String token,
+            @RequestBody ResetPasswordRequest pass) {
+        return ResponseEntity.ok(authService.resetPassword(token, pass));
+    }
+
+    @PostMapping("password/forgot")
+    public ResponseEntity<Void> forgotPassword(@RequestBody ForgotPasswordRequest email) {
+        authService.forgotPassword(email);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("refresh")
     public ResponseEntity<AuthUserResponse> refreshToken(@CookieValue("refresh_token") String token) {
         AuthUserResponse result = authService.refreshToken(token);
-        cookieFactory.setCookie(result.refreshToken());
+        cookieFactory.createRefreshCookie(result.refreshToken());
         return ResponseEntity.ok(result);
     }
 

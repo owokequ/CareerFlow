@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import career.flow.owoke.auth.dto.JwtClaims;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -102,13 +103,11 @@ public class JwtService {
     }
 
     private Key getSignInKeyAccess() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKeyAccess);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 
     private Key getSignInKeyRefresh() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKeyRefresh);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 
 }

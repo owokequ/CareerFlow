@@ -7,24 +7,23 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
-@Configuration
+@Component
 public class CookieFactory {
 
-    @Bean
-    public ResponseCookie setCookie(String token) {
+    public ResponseCookie createRefreshCookie(String token) {
         return ResponseCookie.from("refresh_token", token)
                 .httpOnly(true)
-                .secure(false) // true на проде
+                .secure(false)
                 .path("/")
                 .maxAge(Duration.ofDays(30))
                 .sameSite("Strict")
                 .build();
     }
 
-    public ResponseCookie clearCookie() {
+    public ResponseCookie clearRefreshCookie() {
         return ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
-                .secure(false) // true на проде
+                .secure(false)
                 .path("/")
                 .maxAge(0)
                 .sameSite("Strict")

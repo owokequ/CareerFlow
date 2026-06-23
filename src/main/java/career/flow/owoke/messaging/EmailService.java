@@ -29,7 +29,7 @@ public class EmailService {
 
     public void sendForgotPasswordEmail(String email, String resetToken) {
         String subject = "Password Reset Request";
-        String path = "/api/auth/reset-password";
+        String path = "/api/auth/password/reset";
         String message = "Click the button below to reset your password:";
         sendEmail(email, resetToken, subject, path, message);
     }

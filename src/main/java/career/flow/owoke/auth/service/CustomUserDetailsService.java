@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import career.flow.owoke.auth.entity.AuthUser;
 import career.flow.owoke.auth.repository.AuthRepository;
+import career.flow.owoke.common.util.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,7 +25,6 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         AuthUser user = authRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
 
-        return new User(user.getEmail(), user.getPassword(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
+        return new CustomUserDetails(user);
     }
 }

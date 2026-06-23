@@ -2,6 +2,7 @@ package career.flow.owoke.auth.service;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,12 +15,16 @@ import org.springframework.transaction.annotation.Transactional;
 import career.flow.owoke.auth.dto.JwtClaims;
 import career.flow.owoke.auth.dto.request.AuthUserCreateRequest;
 import career.flow.owoke.auth.dto.request.AuthUserLoginRequest;
+import career.flow.owoke.auth.dto.request.ForgotPasswordRequest;
+import career.flow.owoke.auth.dto.request.ResetPasswordRequest;
 import career.flow.owoke.auth.dto.response.AuthUserResponse;
 import career.flow.owoke.auth.entity.AuthUser;
 import career.flow.owoke.auth.enums.AuthRole;
 import career.flow.owoke.auth.repository.AuthRepository;
+import career.flow.owoke.common.exception.userExceptions.InvalidVerificationTokenException;
 import career.flow.owoke.common.exception.userExceptions.UserAlreadyExistsException;
 import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
+import career.flow.owoke.common.util.CustomUserDetails;
 import career.flow.owoke.config.security.PasswordHash;
 import career.flow.owoke.messaging.EmailService;
 import career.flow.owoke.user.dto.request.UserCreateRequest;
@@ -49,6 +54,13 @@ public class AuthService {
         user.setEmail(request.email());
         user.setPassword(passwordHash.passwordEncoder().encode(request.password()));
         user.setRole(AuthRole.USER);
+
+        String token = UUID.randomUUID().toString();
+
+        redisService.save("verify:" + token, user.getId(), Duration.ofMinutes(10));
+
+        emailService.sendVerificationEmail(user.getEmail(), token);
+
         authRepository.save(user);
 
         kafkaTemplate.send("auth", new UserCreateRequest(
@@ -68,8 +80,6 @@ public class AuthService {
 
         redisService.save("refresh:" + user.getId(), refreshToken, Duration.ofDays(30));
 
-        emailService.sendVerificationEmail(user.getEmail(), refreshToken);
-
         return new AuthUserResponse(
                 accessToken,
                 refreshToken);
@@ -85,7 +95,8 @@ public class AuthService {
             throw new BadCredentialsException("Invalid credentials");
         }
 
-        AuthUser user = (AuthUser) auth.getPrincipal();
+        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+        AuthUser user = principal.getUser();
 
         JwtClaims claims = new JwtClaims(
                 user.getId(),
@@ -140,11 +151,36 @@ public class AuthService {
                 refresh);
     }
 
+    public String resetPassword(String token, ResetPasswordRequest dto) {
+        String userId = redisService.get("reset:" + token);
+        if (userId == null) {
+            throw new InvalidVerificationTokenException(token);
+        }
+        redisService.delete("reset:" + token);
+        AuthUser user = authRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        user.setPassword(passwordHash.passwordEncoder().encode(dto.newPassword()));
+        authRepository.save(user);
+        return "Password reset successfully";
+    }
+
+    public void forgotPassword(ForgotPasswordRequest dto) {
+        AuthUser user = authRepository.findByEmail(dto.email())
+                .orElseThrow(() -> new UserNotFoundException(dto.email()));
+        String token = UUID.randomUUID().toString();
+        redisService.save("reset:" + token, user.getId(), Duration.ofMinutes(10));
+        emailService.sendForgotPasswordEmail(user.getEmail(), token);
+    }
+
     public String verifyUser(String token) {
-        String email = jwtService.getAllClaims(token, "refresh").get("email", String.class);
-        AuthUser user = authRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
+        String userId = redisService.get("verify:" + token);
+        if (userId == null) {
+            throw new InvalidVerificationTokenException(token);
+        }
+        AuthUser user = authRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         user.setEmailVerified(true);
         authRepository.save(user);
+
+        redisService.delete("verify:" + token);
         return "User verified successfully";
     }
 }
