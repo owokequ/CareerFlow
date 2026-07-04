@@ -55,13 +55,11 @@ public class AuthService {
         user.setPassword(passwordHash.passwordEncoder().encode(request.password()));
         user.setRole(AuthRole.USER);
 
-        String token = UUID.randomUUID().toString();
-
-        redisService.save("verify:" + token, user.getId(), Duration.ofMinutes(10));
-
-        emailService.sendVerificationEmail(user.getEmail(), token);
-
         authRepository.save(user);
+
+        String token = UUID.randomUUID().toString();
+        redisService.save("verify:" + token, user.getId(), Duration.ofMinutes(10));
+        emailService.sendVerificationEmail(user.getEmail(), token);
 
         kafkaTemplate.send("auth", new UserCreateRequest(
                 user.getId(),
@@ -115,7 +113,7 @@ public class AuthService {
                 refreshToken);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public String logoutUser(String userId) {
         if (redisService.exists("refresh:" + userId)) {
             redisService.delete("refresh:" + userId);
@@ -137,7 +135,7 @@ public class AuthService {
 
         String refreshVerify = redisService.get("refresh:" + jwtClaims.id());
 
-        if (!refreshVerify.equals(token)) {
+        if (refreshVerify == null || !refreshVerify.equals(token)) {
             throw new RuntimeException("Refresh not found with userId: " + jwtClaims.id());
         }
 

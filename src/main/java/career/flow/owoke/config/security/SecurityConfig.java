@@ -36,10 +36,23 @@ public class SecurityConfig {
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(HttpMethod.DELETE, "/api/auth/logout/{id}")
-                                                .authenticated()
+                                                .requestMatchers(HttpMethod.POST,
+                                                                "/api/auth/register",
+                                                                "/api/auth/login",
+                                                                "/api/auth/password/forgot",
+                                                                "/api/auth/password/reset",
+                                                                "/api/auth/refresh")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/auth/register/verify")
+                                                .permitAll()
+                                                .requestMatchers(
+                                                                "/swagger-ui/**",
+                                                                "/v3/api-docs/**",
+                                                                "/api-docs/**",
+                                                                "/actuator/health")
+                                                .permitAll()
                                                 .anyRequest()
-                                                .permitAll())
+                                                .authenticated())
                                 .authenticationProvider(authenticationProvider())
                                 .exceptionHandling(exception -> exception
                                                 .authenticationEntryPoint(

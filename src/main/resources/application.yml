@@ -3,11 +3,11 @@ server:
 
 spring:
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: xaeshkayt@gmail.com
-    password: ltsc dilo hcat vlvu
-    protocol: smtp
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    protocol: ${MAIL_PROTOCOL:smtp}
     properties:
       mail:
         smtp:
@@ -16,15 +16,15 @@ spring:
             enable: true
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/owoke_db
-    username: owoke
-    password: 12345678
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/owoke_db}
+    username: ${DB_USERNAME:owoke}
+    password: ${DB_PASSWORD:owoke_dev_password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
         format_sql: true
@@ -33,7 +33,7 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -57,15 +57,15 @@ spring:
       concurrency: 3
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 springdoc:
   api-docs:
     path: /api-docs
 
 jwt:
-  secretAccess: "access-jhkfs12312kbjgljakljsdfsdkjfsdfhalskdjfhlsdkfhalsd7823124gjhws7878d12344tSSJLHFSDYUFSDALJ123424321adfaHWERNLBASDFG"
-  secretRefresh: "refresh-jhkfs12312kbjgljakljsdfsdkjfsdfhalskdjfhlsdkfhalsd7823124gjhws7878d12344tSSJLHFSDYUFSDALJ123424321adfaHWERNLBASDFG"
-  expirationAccess: 360000 # 1 час
-  expirationRefresh: 259200000 # 1 месяц
+  secretAccess: ${JWT_ACCESS_SECRET:dev-access-secret-must-be-over-32-bytes-long-change-me}
+  secretRefresh: ${JWT_REFRESH_SECRET:dev-refresh-secret-must-be-over-32-bytes-long-change-me}
+  expirationAccess: ${JWT_ACCESS_EXPIRATION:3600000}
+  expirationRefresh: ${JWT_REFRESH_EXPIRATION:2592000000}

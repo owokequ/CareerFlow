@@ -1,5 +1,6 @@
 package career.flow.owoke.auth.service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -12,8 +13,6 @@ import org.springframework.stereotype.Component;
 import career.flow.owoke.auth.dto.JwtClaims;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +38,7 @@ public class JwtService {
         List<String> roles = jwtClaims.roles();
         claims.put("name", jwtClaims.name());
         claims.put("email", jwtClaims.email());
+        claims.put("emailVerified", jwtClaims.isEmailVerified());
         claims.put("roles", roles);
 
         return Jwts.builder()
@@ -55,6 +55,7 @@ public class JwtService {
         List<String> roles = jwtClaims.roles();
         claims.put("name", jwtClaims.name());
         claims.put("email", jwtClaims.email());
+        claims.put("emailVerified", jwtClaims.isEmailVerified());
         claims.put("roles", roles);
         return Jwts.builder()
                 .addClaims(claims)
@@ -103,11 +104,11 @@ public class JwtService {
     }
 
     private Key getSignInKeyAccess() {
-        return Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        return Keys.hmacShaKeyFor(secretKeyAccess.getBytes(StandardCharsets.UTF_8));
     }
 
     private Key getSignInKeyRefresh() {
-        return Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        return Keys.hmacShaKeyFor(secretKeyRefresh.getBytes(StandardCharsets.UTF_8));
     }
 
 }

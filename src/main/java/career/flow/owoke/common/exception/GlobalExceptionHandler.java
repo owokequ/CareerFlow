@@ -6,9 +6,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import career.flow.owoke.common.exception.userExceptions.EmailAlreadyUsedException;
 import career.flow.owoke.common.exception.userExceptions.InvalidUserRequestException;
 import career.flow.owoke.common.exception.userExceptions.InvalidVerificationTokenException;
 import career.flow.owoke.common.exception.userExceptions.UserAlreadyExistsException;
@@ -39,6 +41,21 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(UserAlreadyExistsException ex,
                         HttpServletRequest request) {
                 log.error("UserAlreadyExistsException: {}", ex.getMessage());
+
+                ErrorResponse response = new ErrorResponse(
+                                ex.getMessage(),
+                                request.getRequestURI(),
+                                request.getMethod(),
+                                LocalDateTime.now(),
+                                null);
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+
+        @ExceptionHandler(EmailAlreadyUsedException.class)
+        public ResponseEntity<ErrorResponse> handleEmailAlreadyUsedException(EmailAlreadyUsedException ex,
+                        HttpServletRequest request) {
+                log.error("EmailAlreadyUsedException: {}", ex.getMessage());
 
                 ErrorResponse response = new ErrorResponse(
                                 ex.getMessage(),
@@ -95,6 +112,27 @@ public class GlobalExceptionHandler {
                                 null);
 
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<ErrorResponse> handleValidationException(
+                        MethodArgumentNotValidException ex,
+                        HttpServletRequest request) {
+
+                var details = ex.getBindingResult()
+                                .getFieldErrors()
+                                .stream()
+                                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                                .toList();
+
+                ErrorResponse response = new ErrorResponse(
+                                "Validation failed",
+                                request.getRequestURI(),
+                                request.getMethod(),
+                                LocalDateTime.now(),
+                                details);
+
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
         @ExceptionHandler(UsernameNotFoundException.class)

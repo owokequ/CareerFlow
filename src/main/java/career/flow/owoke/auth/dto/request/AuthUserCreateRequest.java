@@ -13,7 +13,7 @@ public record AuthUserCreateRequest(
 
         @NotBlank(message = "Email cannot be blank") @Email(message = "Email must be valid") @Size(max = 255, message = "Email must be between 1 and 255 characters") String email,
 
-        @NotNull(message = "Password cannot be null") @Length(min = 8, max = 255, message = "Email must be between 1 and 255 characters") String password
+        @NotNull(message = "Password cannot be null") @Length(min = 8, max = 255, message = "Password must be between 8 and 255 characters") String password
 
 ) {
 

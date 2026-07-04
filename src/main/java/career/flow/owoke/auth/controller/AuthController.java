@@ -1,10 +1,11 @@
 package career.flow.owoke.auth.controller;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import career.flow.owoke.auth.dto.request.ForgotPasswordRequest;
 import career.flow.owoke.auth.dto.request.ResetPasswordRequest;
 import career.flow.owoke.auth.dto.response.AuthUserResponse;
 import career.flow.owoke.auth.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,23 +32,27 @@ public class AuthController {
     private final CookieFactory cookieFactory;
 
     @PostMapping("register")
-    public ResponseEntity<AuthUserResponse> createUser(@RequestBody AuthUserCreateRequest dto) {
+    public ResponseEntity<AuthUserResponse> createUser(@Valid @RequestBody AuthUserCreateRequest dto) {
         AuthUserResponse result = authService.createUser(dto);
-        cookieFactory.createRefreshCookie(result.refreshToken());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieFactory.createRefreshCookie(result.refreshToken()).toString())
+                .body(result);
     }
 
     @PostMapping("login")
-    public ResponseEntity<AuthUserResponse> loginUser(@RequestBody AuthUserLoginRequest dto) {
+    public ResponseEntity<AuthUserResponse> loginUser(@Valid @RequestBody AuthUserLoginRequest dto) {
         AuthUserResponse result = authService.loginUser(dto);
-        cookieFactory.createRefreshCookie(result.refreshToken());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieFactory.createRefreshCookie(result.refreshToken()).toString())
+                .body(result);
     }
 
-    @DeleteMapping("logout/{id}")
-    public ResponseEntity<String> logoutUser(@PathVariable String id) {
-        cookieFactory.clearRefreshCookie();
-        return ResponseEntity.status(204).body(authService.logoutUser(id));
+    @DeleteMapping("logout")
+    public ResponseEntity<Void> logoutUser(Authentication authentication) {
+        authService.logoutUser(authentication.getName());
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, cookieFactory.clearRefreshCookie().toString())
+                .build();
     }
 
     @GetMapping("register/verify")
@@ -56,12 +62,12 @@ public class AuthController {
 
     @PostMapping("password/reset")
     public ResponseEntity<String> resetPassword(@RequestParam("token") String token,
-            @RequestBody ResetPasswordRequest pass) {
+            @Valid @RequestBody ResetPasswordRequest pass) {
         return ResponseEntity.ok(authService.resetPassword(token, pass));
     }
 
     @PostMapping("password/forgot")
-    public ResponseEntity<Void> forgotPassword(@RequestBody ForgotPasswordRequest email) {
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest email) {
         authService.forgotPassword(email);
         return ResponseEntity.noContent().build();
     }
@@ -69,8 +75,9 @@ public class AuthController {
     @PostMapping("refresh")
     public ResponseEntity<AuthUserResponse> refreshToken(@CookieValue("refresh_token") String token) {
         AuthUserResponse result = authService.refreshToken(token);
-        cookieFactory.createRefreshCookie(result.refreshToken());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieFactory.createRefreshCookie(result.refreshToken()).toString())
+                .body(result);
     }
 
 }
