@@ -11,9 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import career.flow.owoke.common.exception.userExceptions.EmailAlreadyUsedException;
-import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
 import career.flow.owoke.user.dto.request.UserCreateRequest;
 import career.flow.owoke.user.dto.request.UserUpdateRequest;
 import career.flow.owoke.user.dto.response.UserCreateResponse;
@@ -43,24 +40,15 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable String id) {
-        try {
-            UserResponse userResponse = userService.getUserById(id);
-            return ResponseEntity.ok(userResponse);
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        UserResponse userResponse = userService.getUserById(id);
+        return ResponseEntity.ok(userResponse);
+
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable String id, @Valid @RequestBody UserUpdateRequest request) {
-        try {
-            UserResponse userResponse = userService.updateUser(id, request);
-            return ResponseEntity.ok(userResponse);
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (EmailAlreadyUsedException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
+        UserResponse userResponse = userService.updateUser(id, request);
+        return ResponseEntity.ok(userResponse);
     }
 
     @DeleteMapping("/{id}")

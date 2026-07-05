@@ -33,11 +33,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
         String jwt = null;
-        String username = null;
+        String userId = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
             try {
-                username = jwtService.getUsername(jwt, "access");
+                userId = jwtService.getUserId(jwt, "access");
             } catch (ExpiredJwtException e) {
                 log.debug("Token expired");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -49,7 +49,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             Claims claims = jwtService.getAllClaims(jwt, "access");
             if (!Boolean.TRUE.equals(claims.get("emailVerified", Boolean.class))) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -57,7 +57,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    username,
+                    userId,
                     null,
                     jwtService.getRoles(jwt, "access").stream().map(SimpleGrantedAuthority::new).toList());
             SecurityContextHolder.getContext().setAuthentication(authToken);

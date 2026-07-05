@@ -10,6 +10,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import career.flow.owoke.common.exception.authExceptions.InvalidRefreshTokenException;
+import career.flow.owoke.common.exception.authExceptions.RefreshTokenNotFoundException;
+import career.flow.owoke.common.exception.authExceptions.UnauthorizedException;
 import career.flow.owoke.common.exception.userExceptions.EmailAlreadyUsedException;
 import career.flow.owoke.common.exception.userExceptions.InvalidUserRequestException;
 import career.flow.owoke.common.exception.userExceptions.InvalidVerificationTokenException;
@@ -106,6 +109,27 @@ public class GlobalExceptionHandler {
 
                 ErrorResponse response = new ErrorResponse(
                                 "Invalid email or password",
+                                request.getRequestURI(),
+                                request.getMethod(),
+                                LocalDateTime.now(),
+                                null);
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        @ExceptionHandler({
+                        InvalidRefreshTokenException.class,
+                        RefreshTokenNotFoundException.class,
+                        UnauthorizedException.class
+        })
+        public ResponseEntity<ErrorResponse> handleUnauthorizedException(
+                        RuntimeException ex,
+                        HttpServletRequest request) {
+
+                log.error("Unauthorized request: {}", ex.getMessage());
+
+                ErrorResponse response = new ErrorResponse(
+                                ex.getMessage(),
                                 request.getRequestURI(),
                                 request.getMethod(),
                                 LocalDateTime.now(),

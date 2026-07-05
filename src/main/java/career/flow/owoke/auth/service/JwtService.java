@@ -74,9 +74,6 @@ public class JwtService {
                 .getBody();
     }
 
-    public String getUsername(String token, String type) {
-        return getAllClaims(token, type).getSubject();
-    }
 
     @SuppressWarnings("unchecked")
     public List<String> getRoles(String token, String type) {

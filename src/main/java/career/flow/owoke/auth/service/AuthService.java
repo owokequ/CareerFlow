@@ -21,6 +21,8 @@ import career.flow.owoke.auth.dto.response.AuthUserResponse;
 import career.flow.owoke.auth.entity.AuthUser;
 import career.flow.owoke.auth.enums.AuthRole;
 import career.flow.owoke.auth.repository.AuthRepository;
+import career.flow.owoke.common.exception.authExceptions.InvalidRefreshTokenException;
+import career.flow.owoke.common.exception.authExceptions.RefreshTokenNotFoundException;
 import career.flow.owoke.common.exception.userExceptions.InvalidVerificationTokenException;
 import career.flow.owoke.common.exception.userExceptions.UserAlreadyExistsException;
 import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
@@ -29,6 +31,7 @@ import career.flow.owoke.config.security.PasswordHash;
 import career.flow.owoke.messaging.EmailService;
 import career.flow.owoke.user.dto.request.UserCreateRequest;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -119,13 +122,19 @@ public class AuthService {
             redisService.delete("refresh:" + userId);
             return "Logged out successfully";
         } else {
-            throw new RuntimeException("User not found");
+            throw new RefreshTokenNotFoundException(userId);
         }
 
     }
 
     public AuthUserResponse refreshToken(String token) {
-        Claims claims = jwtService.getAllClaims(token, "refresh");
+        Claims claims;
+        try {
+            claims = jwtService.getAllClaims(token, "refresh");
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new InvalidRefreshTokenException();
+        }
+
         JwtClaims jwtClaims = new JwtClaims(
                 claims.getSubject(),
                 claims.get("name", String.class),
@@ -136,7 +145,7 @@ public class AuthService {
         String refreshVerify = redisService.get("refresh:" + jwtClaims.id());
 
         if (refreshVerify == null || !refreshVerify.equals(token)) {
-            throw new RuntimeException("Refresh not found with userId: " + jwtClaims.id());
+            throw new RefreshTokenNotFoundException(jwtClaims.id());
         }
 
         String access = jwtService.generateAccessToken(jwtClaims);
