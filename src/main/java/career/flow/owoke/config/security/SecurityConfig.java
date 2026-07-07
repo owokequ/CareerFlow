@@ -30,6 +30,8 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain getSecurityFilterChain(HttpSecurity http) throws Exception {
                 return http
+                                // CSRF is disabled because access tokens are sent via Authorization header;
+                                // refresh cookies are HttpOnly, SameSite=Strict, and Secure in production.
                                 .csrf(csrf -> csrf.disable())
 
                                 .sessionManagement(session -> session
@@ -51,12 +53,18 @@ public class SecurityConfig {
                                                                 "/api-docs/**",
                                                                 "/actuator/health")
                                                 .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
+                                                .requestMatchers(HttpMethod.PUT, "/api/users/me").authenticated()
+                                                .requestMatchers("/api/users/**").hasRole("ADMIN")
                                                 .anyRequest()
                                                 .authenticated())
                                 .authenticationProvider(authenticationProvider())
                                 .exceptionHandling(exception -> exception
                                                 .authenticationEntryPoint(
-                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                                        response.setStatus(HttpStatus.FORBIDDEN.value());
+                                                }))
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
                                 .build();

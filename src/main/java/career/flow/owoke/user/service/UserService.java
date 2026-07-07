@@ -73,7 +73,7 @@ public class UserService {
             return new UserNotFoundException(id);
         });
 
-        if (userRepository.existsByEmail(request.email())) {
+        if (userRepository.existsByEmailAndIdNot(request.email(), id)) {
             log.warn("Email already exists");
             throw new EmailAlreadyUsedException(request.email());
         }
@@ -97,5 +97,23 @@ public class UserService {
 
         userRepository.delete(user);
         log.debug("User deleted successfully with id: {}", id);
+    }
+
+    public UserResponse getCurrentUser(String authId) {
+        User user = userRepository.findByAuthId(authId).orElseThrow(() -> new UserNotFoundException(authId));
+        return userMapper.toResponse(user);
+    }
+
+    @Transactional
+    public UserResponse updateCurrentUser(String authId, UserUpdateRequest request) {
+        User user = userRepository.findByAuthId(authId).orElseThrow(() -> new UserNotFoundException(authId));
+
+        if (userRepository.existsByEmailAndAuthIdNot(request.email(), authId)) {
+            throw new EmailAlreadyUsedException(request.email());
+        }
+
+        user.setEmail(request.email());
+        user.setName(request.name());
+        return userMapper.toResponse(userRepository.save(user));
     }
 }
