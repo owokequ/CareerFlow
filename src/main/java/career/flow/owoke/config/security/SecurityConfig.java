@@ -51,12 +51,18 @@ public class SecurityConfig {
                                                                 "/api-docs/**",
                                                                 "/actuator/health")
                                                 .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
+                                                .requestMatchers(HttpMethod.PUT, "/api/users/me").authenticated()
+                                                .requestMatchers("/api/users/**").hasRole("ADMIN")
                                                 .anyRequest()
                                                 .authenticated())
                                 .authenticationProvider(authenticationProvider())
                                 .exceptionHandling(exception -> exception
                                                 .authenticationEntryPoint(
-                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                                        response.setStatus(HttpStatus.FORBIDDEN.value());
+                                                }))
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
                                 .build();

@@ -1,6 +1,3 @@
-server:
-  port: 8088
-
 spring:
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
@@ -16,9 +13,9 @@ spring:
             enable: true
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/owoke_db}
-    username: ${DB_USERNAME:owoke}
-    password: ${DB_PASSWORD:owoke_dev_password}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -33,7 +30,7 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -57,15 +54,24 @@ spring:
       concurrency: 3
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
 
 springdoc:
   api-docs:
     path: /api-docs
 
 jwt:
-  secretAccess: ${JWT_ACCESS_SECRET:dev-access-secret-must-be-over-32-bytes-long-change-me}
-  secretRefresh: ${JWT_REFRESH_SECRET:dev-refresh-secret-must-be-over-32-bytes-long-change-me}
+  secretAccess: ${JWT_ACCESS_SECRET}
+  secretRefresh: ${JWT_REFRESH_SECRET}
   expirationAccess: ${JWT_ACCESS_EXPIRATION:3600000}
   expirationRefresh: ${JWT_REFRESH_EXPIRATION:2592000000}
+
+app:
+  security:
+    refresh-cookie:
+      secure: true
+      http-only: true
+      same-site: Strict
+      path: /
+      max-age: 30d

@@ -1,0 +1,38 @@
+server:
+  port: 8088
+
+spring:
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    protocol: ${MAIL_PROTOCOL:smtp}
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/owoke_db}
+    username: ${DB_USERNAME:owoke}
+    password: ${DB_PASSWORD:owoke_dev_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: ${JPA_SHOW_SQL:false}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+jwt:
+  secretAccess: ${JWT_ACCESS_SECRET:dev-access-secret-must-be-over-32-bytes-long-change-me}
+  secretRefresh: ${JWT_REFRESH_SECRET:dev-refresh-secret-must-be-over-32-bytes-long-change-me}
+  expirationAccess: ${JWT_ACCESS_EXPIRATION:3600000}
+  expirationRefresh: ${JWT_REFRESH_EXPIRATION:2592000000}
+
+app:
+  security:
+    refresh-cookie:
+      secure: false
