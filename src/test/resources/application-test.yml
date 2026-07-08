@@ -1,5 +1,6 @@
 spring:
   kafka:
+    bootstrap-servers: localhost:9092
     admin:
       auto-create: false
     listener:
@@ -7,3 +8,12 @@ spring:
 
   jpa:
     open-in-view: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  secretAccess: test-access-secret-must-be-at-least-32-bytes-long
+  secretRefresh: test-refresh-secret-must-be-at-least-32-bytes-long

@@ -1,7 +1,6 @@
 package career.flow.owoke.auth.service;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
@@ -10,15 +9,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import career.flow.owoke.auth.dto.request.AuthUserCreateRequest;
 import career.flow.owoke.auth.entity.AuthUser;
+import career.flow.owoke.auth.event.AuthSessionCreatedEvent;
+import career.flow.owoke.auth.event.AuthUserRegisteredEvent;
 import career.flow.owoke.auth.repository.AuthRepository;
+import career.flow.owoke.config.security.PasswordResetRateLimitProperties;
 import career.flow.owoke.config.security.PasswordHash;
-import career.flow.owoke.messaging.EmailService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -30,7 +31,7 @@ class AuthServiceTest {
     private AuthenticationManager authenticationManager;
 
     @Mock
-    private KafkaTemplate<String, Object> kafkaTemplate;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private PasswordHash passwordHash;
@@ -42,16 +43,19 @@ class AuthServiceTest {
     private RedisService redisService;
 
     @Mock
-    private EmailService emailService;
+    private PasswordResetRateLimitProperties passwordResetRateLimitProperties;
+
+    @Mock
+    private RefreshTokenStore refreshTokenStore;
 
     @InjectMocks
     private AuthService authService;
 
     @Test
-    void createUserSavesUserBeforeStoringVerificationToken() {
+    void createUserSavesUserBeforePublishingRegistrationEvents() {
         AuthUserCreateRequest request = new AuthUserCreateRequest(
                 "Artem",
-                "artem@example.com",
+                "Artem@Example.com",
                 "password123");
 
         when(passwordHash.passwordEncoder()).thenReturn(new BCryptPasswordEncoder());
@@ -62,15 +66,18 @@ class AuthServiceTest {
         });
         when(jwtService.generateAccessToken(any())).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
+        when(refreshTokenStore.hash("refresh-token")).thenReturn("refresh-token-hash");
 
         authService.createUser(request);
 
-        var inOrder = inOrder(authRepository, redisService, emailService);
+        var inOrder = inOrder(authRepository, eventPublisher);
         inOrder.verify(authRepository).save(any(AuthUser.class));
-        inOrder.verify(redisService).save(
-                org.mockito.ArgumentMatchers.startsWith("verify:"),
-                eq("auth-id"),
-                any());
-        inOrder.verify(emailService).sendVerificationEmail(eq("artem@example.com"), any());
+        inOrder.verify(eventPublisher).publishEvent(new AuthUserRegisteredEvent(
+                "auth-id",
+                "Artem",
+                "artem@example.com"));
+        inOrder.verify(eventPublisher).publishEvent(new AuthSessionCreatedEvent(
+                "auth-id",
+                "refresh-token-hash"));
     }
 }
