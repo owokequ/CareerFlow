@@ -1,0 +1,5 @@
+# The Dockerfile copies only the pre-built Spring Boot jar.
+*
+!target/
+target/*
+!target/*.jar
