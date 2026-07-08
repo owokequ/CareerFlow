@@ -60,10 +60,6 @@ public class AuthService {
 
         authRepository.save(user);
 
-        String token = UUID.randomUUID().toString();
-        redisService.save("verify:" + token, user.getId(), Duration.ofMinutes(10));
-        emailService.sendVerificationEmail(user.getEmail(), token);
-
         eventPublisher.publishEvent(new AuthUserRegisteredEvent(
                 user.getId(),
                 user.getName(),

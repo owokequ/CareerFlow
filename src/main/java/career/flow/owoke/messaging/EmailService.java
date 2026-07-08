@@ -64,7 +64,8 @@ public class EmailService {
             mailSender.send(mimeMessage);
 
         } catch (Exception e) {
-            log.error("Error sending email", e);
+            log.error("Error sending email to {}", email, e);
+            throw new EmailDeliveryException(email, e);
         }
     }
 }
