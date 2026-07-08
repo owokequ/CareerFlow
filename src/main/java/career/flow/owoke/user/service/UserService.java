@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import career.flow.owoke.common.exception.userExceptions.EmailAlreadyUsedException;
 import career.flow.owoke.common.exception.userExceptions.UserAlreadyExistsException;
 import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
+import career.flow.owoke.common.util.EmailUtils;
 import career.flow.owoke.messaging.event.AuthUserCreatedEvent;
 import career.flow.owoke.user.dto.request.UserUpdateRequest;
 import career.flow.owoke.user.dto.response.UserListResponse;
@@ -69,12 +70,13 @@ public class UserService {
             log.warn("User not found for update with id: {}", id);
             return new UserNotFoundException(id);
         });
+        String normalizedEmail = EmailUtils.normalize(request.email());
 
-        if (userRepository.existsByEmailAndIdNot(request.email(), id)) {
+        if (userRepository.existsByEmailAndIdNot(normalizedEmail, id)) {
             log.warn("Email already exists");
             throw new EmailAlreadyUsedException(request.email());
         }
-        user.setEmail(request.email());
+        user.setEmail(normalizedEmail);
 
         user.setName(request.name());
 
@@ -104,12 +106,12 @@ public class UserService {
     @Transactional
     public UserResponse updateCurrentUser(String authId, UserUpdateRequest request) {
         User user = userRepository.findByAuthId(authId).orElseThrow(() -> new UserNotFoundException(authId));
-
-        if (userRepository.existsByEmailAndAuthIdNot(request.email(), authId)) {
+        String normalizedEmail = EmailUtils.normalize(request.email());
+        if (userRepository.existsByEmailAndAuthIdNot(normalizedEmail, authId)) {
             throw new EmailAlreadyUsedException(request.email());
         }
 
-        user.setEmail(request.email());
+        user.setEmail(normalizedEmail);
         user.setName(request.name());
         return userMapper.toResponse(userRepository.save(user));
     }

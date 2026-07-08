@@ -28,6 +28,8 @@ import career.flow.owoke.common.exception.userExceptions.InvalidVerificationToke
 import career.flow.owoke.common.exception.userExceptions.UserAlreadyExistsException;
 import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
 import career.flow.owoke.common.util.CustomUserDetails;
+import career.flow.owoke.common.util.EmailUtils;
+import career.flow.owoke.common.util.HashUtils;
 import career.flow.owoke.config.security.PasswordHash;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -48,13 +50,15 @@ public class AuthService {
 
     @Transactional
     public AuthUserResponse createUser(AuthUserCreateRequest request) {
-        if (authRepository.existsByEmail(request.email())) {
+        String normalizedEmail = EmailUtils.normalize(request.email());
+
+        if (authRepository.existsByEmail(normalizedEmail)) {
             throw new UserAlreadyExistsException(request.email());
         }
 
         AuthUser user = new AuthUser();
         user.setName(request.name());
-        user.setEmail(request.email());
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordHash.passwordEncoder().encode(request.password()));
         user.setRole(AuthRole.USER);
 
@@ -63,12 +67,12 @@ public class AuthService {
         eventPublisher.publishEvent(new AuthUserRegisteredEvent(
                 user.getId(),
                 user.getName(),
-                user.getEmail()));
+                normalizedEmail));
 
         JwtClaims claims = new JwtClaims(
                 user.getId(),
                 user.getName(),
-                user.getEmail(),
+                normalizedEmail,
                 user.getEmailVerified(),
                 List.of("ROLE_" + user.getRole().name()));
 
@@ -84,10 +88,11 @@ public class AuthService {
 
     @Transactional
     public AuthUserResponse loginUser(AuthUserLoginRequest dto) {
+        String normalizedEmail = EmailUtils.normalize(dto.email());
         Authentication auth = null;
         try {
             auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(dto.email(), dto.password()));
+                    new UsernamePasswordAuthenticationToken(normalizedEmail, dto.password()));
         } catch (BadCredentialsException e) {
             throw new BadCredentialsException("Invalid credentials");
         }
@@ -98,7 +103,7 @@ public class AuthService {
         JwtClaims claims = new JwtClaims(
                 user.getId(),
                 user.getName(),
-                user.getEmail(),
+                normalizedEmail,
                 user.getEmailVerified(),
                 List.of("ROLE_" + user.getRole().name()));
 
@@ -168,7 +173,14 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public void forgotPassword(ForgotPasswordRequest dto) {
-        authRepository.findByEmail(dto.email())
+        String normalizedEmail = EmailUtils.normalize(dto.email());
+        String rateLimitKey = "rate:password-reset:" + HashUtils.sha256(normalizedEmail);
+        if (redisService.exists(rateLimitKey)) {
+            log.info("Password reset requested");
+            return;
+        }
+        redisService.save(rateLimitKey, "1", Duration.ofMinutes(5));
+        authRepository.findByEmail(normalizedEmail)
                 .ifPresent(user -> eventPublisher.publishEvent(
                         new PasswordResetRequestedEvent(user.getId(), user.getEmail())));
         log.info("Password reset requested");
