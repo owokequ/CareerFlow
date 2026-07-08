@@ -2,7 +2,6 @@ package career.flow.owoke.auth.service;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +20,7 @@ import career.flow.owoke.auth.dto.response.AuthUserResponse;
 import career.flow.owoke.auth.entity.AuthUser;
 import career.flow.owoke.auth.enums.AuthRole;
 import career.flow.owoke.auth.event.AuthUserRegisteredEvent;
+import career.flow.owoke.auth.event.PasswordResetRequestedEvent;
 import career.flow.owoke.auth.repository.AuthRepository;
 import career.flow.owoke.common.exception.authExceptions.InvalidRefreshTokenException;
 import career.flow.owoke.common.exception.authExceptions.RefreshTokenNotFoundException;
@@ -29,7 +29,6 @@ import career.flow.owoke.common.exception.userExceptions.UserAlreadyExistsExcept
 import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
 import career.flow.owoke.common.util.CustomUserDetails;
 import career.flow.owoke.config.security.PasswordHash;
-import career.flow.owoke.messaging.EmailService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,6 @@ public class AuthService {
     private final PasswordHash passwordHash;
     private final JwtService jwtService;
     private final RedisService redisService;
-    private final EmailService emailService;
 
     @Transactional
     public AuthUserResponse createUser(AuthUserCreateRequest request) {
@@ -166,12 +164,11 @@ public class AuthService {
         return "Password reset successfully";
     }
 
+    @Transactional(readOnly = true)
     public void forgotPassword(ForgotPasswordRequest dto) {
         AuthUser user = authRepository.findByEmail(dto.email())
                 .orElseThrow(() -> new UserNotFoundException(dto.email()));
-        String token = UUID.randomUUID().toString();
-        redisService.save("reset:" + token, user.getId(), Duration.ofMinutes(10));
-        emailService.sendForgotPasswordEmail(user.getEmail(), token);
+        eventPublisher.publishEvent(new PasswordResetRequestedEvent(user.getId(), user.getEmail()));
     }
 
     public String verifyUser(String token) {
