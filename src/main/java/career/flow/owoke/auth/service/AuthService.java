@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,6 +20,7 @@ import career.flow.owoke.auth.dto.request.ResetPasswordRequest;
 import career.flow.owoke.auth.dto.response.AuthUserResponse;
 import career.flow.owoke.auth.entity.AuthUser;
 import career.flow.owoke.auth.enums.AuthRole;
+import career.flow.owoke.auth.event.AuthUserRegisteredEvent;
 import career.flow.owoke.auth.repository.AuthRepository;
 import career.flow.owoke.common.exception.authExceptions.InvalidRefreshTokenException;
 import career.flow.owoke.common.exception.authExceptions.RefreshTokenNotFoundException;
@@ -29,7 +30,6 @@ import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
 import career.flow.owoke.common.util.CustomUserDetails;
 import career.flow.owoke.config.security.PasswordHash;
 import career.flow.owoke.messaging.EmailService;
-import career.flow.owoke.messaging.event.AuthUserCreatedEvent;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ public class AuthService {
 
     private final AuthRepository authRepository;
     private final AuthenticationManager authenticationManager;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ApplicationEventPublisher eventPublisher;
     private final PasswordHash passwordHash;
     private final JwtService jwtService;
     private final RedisService redisService;
@@ -64,7 +64,7 @@ public class AuthService {
         redisService.save("verify:" + token, user.getId(), Duration.ofMinutes(10));
         emailService.sendVerificationEmail(user.getEmail(), token);
 
-        kafkaTemplate.send("auth", new AuthUserCreatedEvent(
+        eventPublisher.publishEvent(new AuthUserRegisteredEvent(
                 user.getId(),
                 user.getName(),
                 user.getEmail()));
