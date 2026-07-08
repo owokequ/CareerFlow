@@ -1,6 +1,14 @@
 server:
   port: 8088
 
+management:
+  health:
+    mail:
+      enabled: false
+  endpoint:
+    health:
+      show-details: always
+
 spring:
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}

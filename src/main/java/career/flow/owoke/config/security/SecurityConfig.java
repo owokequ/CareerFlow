@@ -51,7 +51,10 @@ public class SecurityConfig {
                                                                 "/swagger-ui/**",
                                                                 "/v3/api-docs/**",
                                                                 "/api-docs/**",
-                                                                "/actuator/health")
+                                                                "/actuator/health",
+                                                                "/actuator/health/**",
+                                                                "/livez",
+                                                                "/readyz")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                                                 .requestMatchers(HttpMethod.PUT, "/api/users/me").authenticated()
