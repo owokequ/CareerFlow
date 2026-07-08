@@ -81,7 +81,7 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(claims);
         String refreshToken = jwtService.generateRefreshToken(claims);
 
-        redisService.save("refresh:" + user.getId(), refreshToken, Duration.ofDays(30));
+        redisService.save(refreshKey(user.getId()), hashToken(refreshToken), Duration.ofDays(30));
 
         return new AuthUserResponse(
                 accessToken,
@@ -112,7 +112,7 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(claims);
         String refreshToken = jwtService.generateRefreshToken(claims);
 
-        redisService.save("refresh:" + user.getId(), refreshToken, Duration.ofDays(30));
+        redisService.save(refreshKey(user.getId()), hashToken(refreshToken), Duration.ofDays(30));
 
         return new AuthUserResponse(
                 accessToken,
@@ -121,8 +121,9 @@ public class AuthService {
 
     @Transactional
     public String logoutUser(String userId) {
-        if (redisService.exists("refresh:" + userId)) {
-            redisService.delete("refresh:" + userId);
+        String key = refreshKey(userId);
+        if (redisService.exists(key)) {
+            redisService.delete(key);
             return "Logged out successfully";
         } else {
             throw new RefreshTokenNotFoundException(userId);
@@ -145,16 +146,16 @@ public class AuthService {
                 claims.get("emailVerified", Boolean.class),
                 claims.get("roles", List.class));
 
-        String refreshVerify = redisService.get("refresh:" + jwtClaims.id());
-
-        if (refreshVerify == null || !refreshVerify.equals(token)) {
+        String refreshVerify = redisService.get(refreshKey(jwtClaims.id()));
+        String incomingRefreshTokenHashed = hashToken(token);
+        if (refreshVerify == null || !refreshVerify.equals(incomingRefreshTokenHashed)) {
             throw new RefreshTokenNotFoundException(jwtClaims.id());
         }
 
         String access = jwtService.generateAccessToken(jwtClaims);
         String refresh = jwtService.generateRefreshToken(jwtClaims);
 
-        redisService.save("refresh:" + jwtClaims.id(), refresh, Duration.ofDays(30));
+        redisService.save(refreshKey(jwtClaims.id()), hashToken(refresh), Duration.ofDays(30));
 
         return new AuthUserResponse(
                 access,
@@ -201,5 +202,13 @@ public class AuthService {
 
         redisService.delete("verify:" + token);
         return "User verified successfully";
+    }
+
+    private String hashToken(String token) {
+        return HashUtils.sha256(token);
+    }
+
+    private String refreshKey(String userId) {
+        return "refresh:" + userId;
     }
 }
