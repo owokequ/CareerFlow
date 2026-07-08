@@ -75,6 +75,9 @@ app:
       same-site: Strict
       path: /
       max-age: 30d
+    refresh-token:
+      key-prefix: "refresh:"
+      ttl: 30d
     password-reset:
       rate-limit:
         enabled: true

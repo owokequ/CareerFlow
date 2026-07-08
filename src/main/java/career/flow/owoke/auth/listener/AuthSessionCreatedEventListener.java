@@ -1,13 +1,11 @@
 package career.flow.owoke.auth.listener;
 
-import java.time.Duration;
-
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import career.flow.owoke.auth.event.AuthSessionCreatedEvent;
-import career.flow.owoke.auth.service.RedisService;
+import career.flow.owoke.auth.service.RefreshTokenStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,11 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthSessionCreatedEventListener {
-    private final RedisService redisService;
+    private final RefreshTokenStore refreshTokenStore;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(AuthSessionCreatedEvent event) {
-        redisService.save("refresh:" + event.authId(), event.refreshTokenHash(), Duration.ofDays(30));
+        refreshTokenStore.saveHash(event.authId(), event.refreshTokenHash());
         log.info("Refresh session created for auth user: {}", event.authId());
     }
 }
