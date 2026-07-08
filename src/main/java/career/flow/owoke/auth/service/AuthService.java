@@ -32,9 +32,11 @@ import career.flow.owoke.config.security.PasswordHash;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final AuthRepository authRepository;
@@ -166,9 +168,10 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public void forgotPassword(ForgotPasswordRequest dto) {
-        AuthUser user = authRepository.findByEmail(dto.email())
-                .orElseThrow(() -> new UserNotFoundException(dto.email()));
-        eventPublisher.publishEvent(new PasswordResetRequestedEvent(user.getId(), user.getEmail()));
+        authRepository.findByEmail(dto.email())
+                .ifPresent(user -> eventPublisher.publishEvent(
+                        new PasswordResetRequestedEvent(user.getId(), user.getEmail())));
+        log.info("Password reset requested");
     }
 
     public String verifyUser(String token) {
