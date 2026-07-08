@@ -19,6 +19,7 @@ import career.flow.owoke.auth.dto.request.ResetPasswordRequest;
 import career.flow.owoke.auth.dto.response.AuthUserResponse;
 import career.flow.owoke.auth.entity.AuthUser;
 import career.flow.owoke.auth.enums.AuthRole;
+import career.flow.owoke.auth.event.AuthSessionCreatedEvent;
 import career.flow.owoke.auth.event.AuthUserRegisteredEvent;
 import career.flow.owoke.auth.event.PasswordResetRequestedEvent;
 import career.flow.owoke.auth.repository.AuthRepository;
@@ -81,7 +82,9 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(claims);
         String refreshToken = jwtService.generateRefreshToken(claims);
 
-        redisService.save(refreshKey(user.getId()), hashToken(refreshToken), Duration.ofDays(30));
+        eventPublisher.publishEvent(new AuthSessionCreatedEvent(
+                user.getId(),
+                hashToken(refreshToken)));
 
         return new AuthUserResponse(
                 accessToken,
