@@ -31,6 +31,7 @@ import career.flow.owoke.common.util.CustomUserDetails;
 import career.flow.owoke.common.util.EmailUtils;
 import career.flow.owoke.common.util.HashUtils;
 import career.flow.owoke.config.security.PasswordHash;
+import career.flow.owoke.config.security.PasswordResetRateLimitProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ public class AuthService {
     private final PasswordHash passwordHash;
     private final JwtService jwtService;
     private final RedisService redisService;
+    private final PasswordResetRateLimitProperties passwordResetRateLimitProperties;
 
     @Transactional
     public AuthUserResponse createUser(AuthUserCreateRequest request) {
@@ -174,12 +176,14 @@ public class AuthService {
     @Transactional(readOnly = true)
     public void forgotPassword(ForgotPasswordRequest dto) {
         String normalizedEmail = EmailUtils.normalize(dto.email());
-        String rateLimitKey = "rate:password-reset:" + HashUtils.sha256(normalizedEmail);
-        if (redisService.exists(rateLimitKey)) {
-            log.info("Password reset requested");
-            return;
+        if (passwordResetRateLimitProperties.enabled()) {
+            String rateLimitKey = passwordResetRateLimitProperties.keyPrefix() + HashUtils.sha256(normalizedEmail);
+            if (redisService.exists(rateLimitKey)) {
+                log.info("Password reset requested");
+                return;
+            }
+            redisService.save(rateLimitKey, "1", passwordResetRateLimitProperties.cooldown());
         }
-        redisService.save(rateLimitKey, "1", Duration.ofMinutes(5));
         authRepository.findByEmail(normalizedEmail)
                 .ifPresent(user -> eventPublisher.publishEvent(
                         new PasswordResetRequestedEvent(user.getId(), user.getEmail())));

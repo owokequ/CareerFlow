@@ -75,3 +75,8 @@ app:
       same-site: Strict
       path: /
       max-age: 30d
+    password-reset:
+      rate-limit:
+        enabled: true
+        key-prefix: "rate:password-reset:"
+        cooldown: 5m

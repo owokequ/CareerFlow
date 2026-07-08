@@ -36,3 +36,6 @@ app:
   security:
     refresh-cookie:
       secure: false
+    password-reset:
+      rate-limit:
+        cooldown: 30s
