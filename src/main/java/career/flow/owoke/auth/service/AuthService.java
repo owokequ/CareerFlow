@@ -29,7 +29,7 @@ import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
 import career.flow.owoke.common.util.CustomUserDetails;
 import career.flow.owoke.config.security.PasswordHash;
 import career.flow.owoke.messaging.EmailService;
-import career.flow.owoke.user.dto.request.UserCreateRequest;
+import career.flow.owoke.messaging.event.AuthUserCreatedEvent;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
@@ -64,7 +64,7 @@ public class AuthService {
         redisService.save("verify:" + token, user.getId(), Duration.ofMinutes(10));
         emailService.sendVerificationEmail(user.getEmail(), token);
 
-        kafkaTemplate.send("auth", new UserCreateRequest(
+        kafkaTemplate.send("auth", new AuthUserCreatedEvent(
                 user.getId(),
                 user.getName(),
                 user.getEmail()));

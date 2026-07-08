@@ -7,9 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import career.flow.owoke.common.exception.userExceptions.EmailAlreadyUsedException;
 import career.flow.owoke.common.exception.userExceptions.UserAlreadyExistsException;
 import career.flow.owoke.common.exception.userExceptions.UserNotFoundException;
-import career.flow.owoke.user.dto.request.UserCreateRequest;
+import career.flow.owoke.messaging.event.AuthUserCreatedEvent;
 import career.flow.owoke.user.dto.request.UserUpdateRequest;
-import career.flow.owoke.user.dto.response.UserCreateResponse;
 import career.flow.owoke.user.dto.response.UserListResponse;
 import career.flow.owoke.user.dto.response.UserResponse;
 import career.flow.owoke.user.entity.User;
@@ -28,19 +27,17 @@ public class UserService {
 
     @KafkaListener(topics = "auth", groupId = "user-service")
     @Transactional
-    public UserCreateResponse createUser(UserCreateRequest request) {
-        log.info("КАФКА СЛЫШНОООО");
-        log.info("Creating new user");
+    public void createUser(AuthUserCreatedEvent event) {
+        log.info("Received auth user created event");
 
-        if (userRepository.existsByAuthId(request.authenticationId())) {
+        if (userRepository.existsByAuthId(event.authId())) {
             log.warn("User already exists");
-            throw new UserAlreadyExistsException(request.email());
+            throw new UserAlreadyExistsException(event.email());
         }
 
-        User savedUser = userRepository.save(userMapper.toEntity(request));
+        User savedUser = userRepository.save(userMapper.toEntity(event));
         log.debug("User created successfully with id: {}", savedUser.getId());
 
-        return userMapper.toCreateResponse(savedUser);
     }
 
     public UserListResponse getAllUsers() {
