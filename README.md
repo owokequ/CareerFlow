@@ -109,6 +109,8 @@ docker compose -f docker/docker-compose.yml up -d
 - OpenAPI docs: `http://localhost:8088/api-docs`
 - Kafka UI: `http://localhost:8081`
 - Redis Insight: `http://localhost:5540`
+- Mailpit UI: `http://localhost:8025`
+- Mailpit SMTP: `localhost:1025`
 - PostgreSQL: `localhost:5433`
 
 ## Конфигурация
@@ -138,6 +140,7 @@ docker compose -f docker/docker-compose.yml up -d
 | `MAIL_USERNAME` | empty |
 | `MAIL_PASSWORD` | empty |
 | `MAIL_PROTOCOL` | `smtp` |
+| `MAIL_FROM` | falls back to `MAIL_USERNAME`, then `noreply@owoke.local` |
 | `JWT_ACCESS_EXPIRATION` | `3600000` |
 | `JWT_REFRESH_EXPIRATION` | `2592000000` |
 | `JPA_SHOW_SQL` | `false` |
@@ -145,6 +148,16 @@ docker compose -f docker/docker-compose.yml up -d
 
 `application-local.yml` содержит безопасные dev-defaults для локальной разработки.
 Пароли и dev JWT secrets из local-профиля не должны использоваться в production.
+
+В `local` профиле email отправляется в Mailpit, а не во внешний SMTP-сервис:
+
+```text
+Spring Boot -> localhost:1025 -> Mailpit -> http://localhost:8025
+```
+
+Mailpit не требует `MAIL_USERNAME`, `MAIL_PASSWORD` и TLS. Адрес отправителя для
+локальных писем задается через `MAIL_FROM`, по умолчанию используется
+`noreply@owoke.local`.
 
 ## API
 

@@ -79,6 +79,8 @@ jwt:
   expirationRefresh: ${JWT_REFRESH_EXPIRATION:2592000000}
 
 app:
+  mail:
+    from: ${MAIL_FROM:${MAIL_USERNAME:noreply@owoke.local}}
   security:
     refresh-cookie:
       secure: true
