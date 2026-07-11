@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import career.flow.owoke.common.exception.authExceptions.InvalidRefreshTokenException;
 import career.flow.owoke.common.exception.authExceptions.RefreshTokenNotFoundException;
 import career.flow.owoke.common.exception.authExceptions.UnauthorizedException;
+import career.flow.owoke.common.exception.resumeExceptions.ResumeNotFoundException;
 import career.flow.owoke.common.exception.userExceptions.EmailAlreadyUsedException;
 import career.flow.owoke.common.exception.userExceptions.InvalidUserRequestException;
 import career.flow.owoke.common.exception.userExceptions.InvalidVerificationTokenException;
@@ -24,6 +25,22 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+        @ExceptionHandler(ResumeNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleResumeNotFoundException(
+                        ResumeNotFoundException ex,
+                        HttpServletRequest request) {
+                log.warn("Resume not found: {}", ex.getMessage());
+
+                ErrorResponse response = new ErrorResponse(
+                                ex.getMessage(),
+                                request.getRequestURI(),
+                                request.getMethod(),
+                                LocalDateTime.now(),
+                                null);
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
 
         @ExceptionHandler(UserNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex,
