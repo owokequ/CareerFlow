@@ -13,3 +13,6 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/005-create-resume.yaml
+
+  - include:
+      file: db/changelog/006-create-company.yaml

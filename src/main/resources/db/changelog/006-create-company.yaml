@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-create-company
+      author: owoke
+
+      changes:
+        - createTable:
+            tableName: company
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: user_id
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: normalized_name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: website
+                  type: varchar(500)
+
+              - column:
+                  name: industry
+                  type: varchar(150)
+
+              - column:
+                  name: location
+                  type: varchar(200)
+
+              - column:
+                  name: description
+                  type: varchar(2000)
+
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: company
+            baseColumnNames: user_id
+            referencedTableName: app_user
+            referencedColumnNames: id
+            constraintName: fk_company_app_user
+
+        - addUniqueConstraint:
+            tableName: company
+            columnNames: user_id, normalized_name
+            constraintName: uq_company_user_normalized_name

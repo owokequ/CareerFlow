@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import career.flow.owoke.common.exception.authExceptions.InvalidRefreshTokenException;
 import career.flow.owoke.common.exception.authExceptions.RefreshTokenNotFoundException;
 import career.flow.owoke.common.exception.authExceptions.UnauthorizedException;
+import career.flow.owoke.common.exception.companyExceptions.CompanyAlreadyExistsException;
+import career.flow.owoke.common.exception.companyExceptions.CompanyNotFoundException;
 import career.flow.owoke.common.exception.resumeExceptions.ResumeNotFoundException;
 import career.flow.owoke.common.exception.userExceptions.EmailAlreadyUsedException;
 import career.flow.owoke.common.exception.userExceptions.InvalidUserRequestException;
@@ -25,6 +28,54 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+        @ExceptionHandler(CompanyNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleCompanyNotFoundException(
+                        CompanyNotFoundException ex,
+                        HttpServletRequest request) {
+                log.warn("Company not found: {}", ex.getMessage());
+
+                ErrorResponse response = new ErrorResponse(
+                                ex.getMessage(),
+                                request.getRequestURI(),
+                                request.getMethod(),
+                                LocalDateTime.now(),
+                                null);
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        @ExceptionHandler(CompanyAlreadyExistsException.class)
+        public ResponseEntity<ErrorResponse> handleCompanyAlreadyExistsException(
+                        CompanyAlreadyExistsException ex,
+                        HttpServletRequest request) {
+                log.warn("Company already exists: {}", ex.getMessage());
+
+                ErrorResponse response = new ErrorResponse(
+                                ex.getMessage(),
+                                request.getRequestURI(),
+                                request.getMethod(),
+                                LocalDateTime.now(),
+                                null);
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+
+        @ExceptionHandler(DataIntegrityViolationException.class)
+        public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+                        DataIntegrityViolationException ex,
+                        HttpServletRequest request) {
+                log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+
+                ErrorResponse response = new ErrorResponse(
+                                "Data conflict",
+                                request.getRequestURI(),
+                                request.getMethod(),
+                                LocalDateTime.now(),
+                                null);
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
 
         @ExceptionHandler(ResumeNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleResumeNotFoundException(
